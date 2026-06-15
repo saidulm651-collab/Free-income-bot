@@ -172,4 +172,11 @@ if __name__ == '__main__':
     threading.Thread(target=run_flask).start()
     # বট পোলিং
     print("Bot is running...")
-    bot.infinity_polling()
+    if __name__ == '__main__':
+    # ফ্লাস্ক ওয়েব সার্ভার ব্যাকগ্রাউন্ডে চালু করা
+    threading.Thread(target=run_flask).start()
+    
+    # বট পোলিং এর সময় 'none_stop' এবং 'timeout' প্যারামিটার যোগ করা
+    print("Bot is running...")
+    bot.infinity_polling(none_stop=True, timeout=60, long_polling_timeout=60)
+    
