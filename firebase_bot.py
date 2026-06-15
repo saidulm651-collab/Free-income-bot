@@ -3,6 +3,7 @@ from telebot import types
 import time
 import requests
 import json
+import os
 from flask import Flask
 import threading
 
@@ -14,7 +15,9 @@ def home():
     return "Bot is running"
 
 def run_flask():
-    app.run(host='0.0.0.0', port=10000)
+    # রেন্ডারের জন্য এনভায়রনমেন্ট পোর্ট ব্যবহার করা উত্তম
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
 
 # ----------------- [ সেটিংস ] -----------------
 API_TOKEN = '8740549803:AAH6AP6WXEX3fxPJJN2IMKIxr28mX1sD144'
@@ -82,7 +85,7 @@ def send_force_join_msg(user_id, text):
 @bot.message_handler(commands=['start'])
 def start_command(message):
     user_id = message.from_user.id
-    user_data = get_user_data(user_id)
+    get_user_data(user_id)
     bot.send_message(user_id, "⚙️ মেনু লোড হচ্ছে...", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
 
 @bot.message_handler(func=lambda message: True)
@@ -90,40 +93,31 @@ def handle_menu(message):
     user_id = message.from_user.id
     text = message.text
     
-    # অ্যাডমিন কমান্ড: ব্যালেন্স চেক, যোগ ও বিয়োগ করার জন্য
     if text.startswith("/check_bal") or text.startswith("/add_bal") or text.startswith("/sub_bal"):
         if user_id == ADMIN_ID:
             parts = text.split()
-            if len(parts) < 2:
-                bot.send_message(user_id, "সঠিক ফরম্যাট: \n/check_bal [user_id] \n/add_bal [user_id] [amount] \n/sub_bal [user_id] [amount]")
-                return
-            
+            if len(parts) < 2: return
             target_id = parts[1]
             target_data = get_user_data(target_id)
             
             if text.startswith("/check_bal"):
                 bot.send_message(user_id, f"👤 User {target_id} এর বর্তমান ব্যালেন্স: {target_data.get('balance', 0.0)} ⭐")
-            
             elif text.startswith("/add_bal") and len(parts) == 3:
                 amount = float(parts[2])
                 target_data['balance'] = target_data.get('balance', 0.0) + amount
                 update_user_data(target_id, target_data)
-                bot.send_message(user_id, f"✅ User {target_id} এর ব্যালেন্সে {amount} যোগ করা হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
-            
+                bot.send_message(user_id, f"✅ যোগ করা হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
             elif text.startswith("/sub_bal") and len(parts) == 3:
                 amount = float(parts[2])
                 target_data['balance'] = target_data.get('balance', 0.0) - amount
                 update_user_data(target_id, target_data)
-                bot.send_message(user_id, f"✅ User {target_id} এর ব্যালেন্স থেকে {amount} কমানো হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
-        else:
-            bot.send_message(user_id, "❌ এই কমান্ডটি শুধুমাত্র অ্যাডমিনের জন্য।")
+                bot.send_message(user_id, f"✅ কমানো হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
         return
 
     user_data = get_user_data(user_id)
     is_subscribed = check_all_subscriptions(user_id)
     task_done = user_data.get('task_completed', False)
 
-    # চ্যানেল জয়েন না থাকলে ব্লক
     if not is_subscribed and text != "🔄 Check Join":
         send_force_join_msg(user_id, f"❌ আগে সবগুলো চ্যানেলে জয়েন করুন। এখনো বাকি: **{get_unjoined_channel(user_id)}**")
         return
@@ -149,23 +143,19 @@ def handle_menu(message):
             bot.send_message(user_id, "✅ আপনি অলরেডি সব কাজ শেষ করেছেন।")
 
     elif text == "👤 Profile & Balance":
-        if not is_subscribed or not task_done:
-            bot.send_message(user_id, "❌ আগে চ্যানেল সাবস্ক্রাইব ও টাস্ক কমপ্লিট করুন।")
-        else:
-            bot.send_message(user_id, f"💰 ব্যালেন্স: {user_data.get('balance', 0.0)} ⭐")
+        bot.send_message(user_id, f"💰 ব্যালেন্স: {user_data.get('balance', 0.0)} ⭐")
 
     elif text == "🔗 Referral Link":
-        if not is_subscribed or not task_done:
-            bot.send_message(user_id, "❌ আগে চ্যানেল সাবস্ক্রাইব ও টাস্ক কমপ্লিট করুন।")
-        else:
-            bot.send_message(user_id, f"🔗 লিঙ্ক: https://t.me/{(bot.get_me()).username}?start={user_id}")
+        bot.send_message(user_id, f"🔗 লিঙ্ক: https://t.me/{(bot.get_me()).username}?start={user_id}")
 
     elif text == "💰 Withdraw":
         bal = user_data.get('balance', 0.0)
         if bal < MIN_WITHDRAW:
-            bot.send_message(user_id, f"❌ পর্যাপ্ত ব্যালেন্স নেই। আপনার বর্তমান ব্যালেন্স: {bal} ⭐। উইথড্রর জন্য {MIN_WITHDRAW} ⭐ প্রয়োজন।")
+            bot.send_message(user_id, f"❌ পর্যাপ্ত ব্যালেন্স নেই। প্রয়োজন {MIN_WITHDRAW} ⭐।")
         else:
-            bot.send_message(user_id, f"✅ অভিনন্দন! এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
+            bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
 
-print("Bot is running...")
-bot.infinity_polling()
+if __name__ == '__main__':
+    threading.Thread(target=run_flask).start()
+    print("Bot is running...")
+    bot.infinity_polling(none_stop=True, timeout=60, long_polling_timeout=60)
