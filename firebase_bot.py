@@ -3,12 +3,24 @@ from telebot import types
 import time
 import requests
 import json
+from flask import Flask
+import threading
+
+# --- ওয়েব সার্ভিসের জন্য ফ্লাস্ক ---
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is running"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=10000)
 
 # ----------------- [ সেটিংস ] -----------------
 API_TOKEN = '8740549803:AAHSGbE_2H7jRMMIAEfY64R1icFhTb0Ueq0'
 ADMIN_ID = 8426401567
 ADMIN_USERNAME = "gamingsaidulyt"
-REFER_BONUS = 3.0      
+REFER_BONUS = 3.0        
 MIN_WITHDRAW = 100.0   
 
 REQUIRED_CHANNELS = [
@@ -155,5 +167,9 @@ def handle_menu(message):
         else:
             bot.send_message(user_id, f"✅ অভিনন্দন! এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
 
-print("Bot is running...")
-bot.infinity_polling()
+if __name__ == '__main__':
+    # ফ্লাস্ক ওয়েব সার্ভার ব্যাকগ্রাউন্ডে চালু করা
+    threading.Thread(target=run_flask).start()
+    # বট পোলিং
+    print("Bot is running...")
+    bot.infinity_polling()
