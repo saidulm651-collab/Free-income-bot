@@ -77,8 +77,37 @@ def start_command(message):
 def handle_menu(message):
     user_id = message.from_user.id
     text = message.text
-    user_data = get_user_data(user_id)
     
+    # অ্যাডমিন কমান্ড: ব্যালেন্স চেক, যোগ ও বিয়োগ করার জন্য
+    if text.startswith("/check_bal") or text.startswith("/add_bal") or text.startswith("/sub_bal"):
+        if user_id == ADMIN_ID:
+            parts = text.split()
+            if len(parts) < 2:
+                bot.send_message(user_id, "সঠিক ফরম্যাট: \n/check_bal [user_id] \n/add_bal [user_id] [amount] \n/sub_bal [user_id] [amount]")
+                return
+            
+            target_id = parts[1]
+            target_data = get_user_data(target_id)
+            
+            if text.startswith("/check_bal"):
+                bot.send_message(user_id, f"👤 User {target_id} এর বর্তমান ব্যালেন্স: {target_data.get('balance', 0.0)} ⭐")
+            
+            elif text.startswith("/add_bal") and len(parts) == 3:
+                amount = float(parts[2])
+                target_data['balance'] = target_data.get('balance', 0.0) + amount
+                update_user_data(target_id, target_data)
+                bot.send_message(user_id, f"✅ User {target_id} এর ব্যালেন্সে {amount} যোগ করা হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
+            
+            elif text.startswith("/sub_bal") and len(parts) == 3:
+                amount = float(parts[2])
+                target_data['balance'] = target_data.get('balance', 0.0) - amount
+                update_user_data(target_id, target_data)
+                bot.send_message(user_id, f"✅ User {target_id} এর ব্যালেন্স থেকে {amount} কমানো হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
+        else:
+            bot.send_message(user_id, "❌ এই কমান্ডটি শুধুমাত্র অ্যাডমিনের জন্য।")
+        return
+
+    user_data = get_user_data(user_id)
     is_subscribed = check_all_subscriptions(user_id)
     task_done = user_data.get('task_completed', False)
 
