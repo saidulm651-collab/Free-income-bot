@@ -20,7 +20,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=port)
 
 # ----------------- [ সেটিংস ] -----------------
-API_TOKEN = '8740549803:AAH6AP6WXEX3fxPJJN2IMKIxr28mX1sD144'
+API_TOKEN = '8740549803:AAH3xkwD18uoJ3PRq9N_LVQVbYtDtKuBy10'
 ADMIN_ID = 8426401567
 ADMIN_USERNAME = "gamingsaidulyt"
 REFER_BONUS = 3.0        
