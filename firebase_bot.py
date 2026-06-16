@@ -154,11 +154,12 @@ def handle_menu(message):
             bot.send_message(user_id, f"❌ পর্যাপ্ত ব্যালেন্স নেই। প্রয়োজন {MIN_WITHDRAW} ⭐।")
         else:
             bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
-
 if __name__ == '__main__':
     # ফ্লাস্ক আগে রান হবে
     threading.Thread(target=run_flask, daemon=True).start()
     
     print("Bot is running...")
-    # পোলিং এর সময় টেলিগ্রামকে নির্দিষ্ট মেসেজ টাইপ বলে দিন
+    
+    # নিচের লাইনগুলো দিয়ে পুরনো পোলিং লাইনটি রিপ্লেস করুন
+    bot.remove_webhook()
     bot.infinity_polling(none_stop=True, allowed_updates=['message', 'callback_query'])
