@@ -156,19 +156,16 @@ def handle_menu(message):
             bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
 import sys
 
-if __name__ == '__main__':
-    # ফ্লাস্ক ব্যাকগ্রাউন্ডে রান করুন
-    threading.Thread(target=run_flask, daemon=True).start()
-    
-    print("Bot is running...")
-    
-    # কনফ্লিক্ট এড়াতে ওয়েব-হুক রিমুভ করা
-    bot.remove_webhook()
-    
-    # পোলিং মোডে টাইমআউট বাড়িয়ে দেওয়া যাতে সংযোগ বিচ্ছিন্ন না হয়
-    try:
-        bot.infinity_polling(none_stop=True, interval=0, timeout=120, long_polling_timeout=120)
-    except Exception as e:
-        print(f"Polling error: {e}")
-        # রেন্ডারকে নতুন করে রিস্টার্ট নিতে বাধ্য করা
-        sys.exit(1)
+# কোডের এই অংশটি দিয়ে আপনার বর্তমান পোলিং অংশটি রিপ্লেস করুন:
+try:
+    print("Starting bot polling...")
+    # timeout বাড়ানো হয়েছে যাতে সার্ভার কানেকশন ড্রপ না করে
+    bot.infinity_polling(
+        none_stop=True, 
+        timeout=120, 
+        long_polling_timeout=120, 
+        allowed_updates=None
+    )
+except Exception as e:
+    print(f"Polling crashed: {e}")
+    sys.exit(1) # রেন্ডারকে সার্ভিস রিস্টার্ট নিতে বাধ্য করা
