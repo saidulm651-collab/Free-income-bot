@@ -4,23 +4,17 @@ import time
 import requests
 import json
 import os
-from flask import Flask
+from flask import Flask, request
 import threading
 
 # --- ওয়েব সার্ভিসের জন্য ফ্লাস্ক ---
 app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return "Bot is running"
-
-def run_flask():
-    # রেন্ডারের জন্য এনভায়রনমেন্ট পোর্ট ব্যবহার করা উত্তম
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
-
-# ----------------- [ সেটিংস ] -----------------
+# --- সেটিংস ---
 API_TOKEN = os.environ.get('API_TOKEN')
+# আপনার রেন্ডার অ্যাপের লিংকটি এখানে দিন
+WEBHOOK_URL = "https://free-income-bot-sxd6.onrender.com" 
+
 ADMIN_ID = 8426401567
 ADMIN_USERNAME = "gamingsaidulyt"
 REFER_BONUS = 3.0        
@@ -40,6 +34,23 @@ FIREBASE_SECRET = "oL0LJgBqPGD2yppYuDltI4jDKCxSDYqAaVwZy2bX"
 
 bot = telebot.TeleBot(API_TOKEN)
 
+# --- ওয়েব-হুক রুট ---
+@app.route(f'/{API_TOKEN}', methods=['POST'])
+def webhook():
+    json_str = request.stream.read().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return '!', 200
+
+@app.route('/')
+def home():
+    return "Bot is running"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
+
+# --- মূল লজিক ---
 def get_user_data(user_id):
     try:
         url = f"{FIREBASE_URL}users/{user_id}.json?auth={FIREBASE_SECRET}"
@@ -155,21 +166,8 @@ def handle_menu(message):
         else:
             bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
 
-import sys
-
-# ওয়েব সার্ভার চালু করা
-threading.Thread(target=run_flask, daemon=True).start()
-
-# কোডের এই অংশটি দিয়ে আপনার বর্তমান পোলিং অংশটি রিপ্লেস করা হয়েছে:
-try:
-    print("Starting bot polling...")
-    # timeout বাড়ানো হয়েছে যাতে সার্ভার কানেকশন ড্রপ না করে
-    bot.infinity_polling(
-        none_stop=True, 
-        timeout=120, 
-        long_polling_timeout=120, 
-        allowed_updates=None
-    )
-except Exception as e:
-    print(f"Polling crashed: {e}")
-    sys.exit(1) # রেন্ডারকে সার্ভিস রিস্টার্ট নিতে বাধ্য করা
+# --- ওয়েব-হুক সেটআপ ---
+if __name__ == '__main__':
+    bot.remove_webhook()
+    bot.set_webhook(url=f"{WEBHOOK_URL}/{API_TOKEN}")
+    run_flask()
