@@ -154,9 +154,10 @@ def handle_menu(message):
             bot.send_message(user_id, f"❌ পর্যাপ্ত ব্যালেন্স নেই। প্রয়োজন {MIN_WITHDRAW} ⭐।")
         else:
             bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
+
 import sys
 
-# কোডের এই অংশটি দিয়ে আপনার বর্তমান পোলিং অংশটি রিপ্লেস করুন:
+# কোডের এই অংশটি দিয়ে আপনার বর্তমান পোলিং অংশটি রিপ্লেস করা হয়েছে:
 try:
     print("Starting bot polling...")
     # timeout বাড়ানো হয়েছে যাতে সার্ভার কানেকশন ড্রপ না করে
