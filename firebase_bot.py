@@ -154,21 +154,22 @@ def handle_menu(message):
             bot.send_message(user_id, f"❌ পর্যাপ্ত ব্যালেন্স নেই। প্রয়োজন {MIN_WITHDRAW} ⭐।")
         else:
             bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
-# import sys # ফাইলের একদম উপরে এটি ইম্পোর্ট করুন
+import sys
 
 if __name__ == '__main__':
-    # ফ্লাস্ক আগে রান হবে
+    # ফ্লাস্ক ব্যাকগ্রাউন্ডে রান করুন
     threading.Thread(target=run_flask, daemon=True).start()
     
     print("Bot is running...")
     
     # কনফ্লিক্ট এড়াতে ওয়েব-হুক রিমুভ করা
     bot.remove_webhook()
-    time.sleep(1) 
+    time.sleep(2) # সময় একটু বাড়িয়ে দিলাম যাতে আগের সেশন পুরোপুরি বন্ধ হয়
     
     try:
-        # এখানে কোনো থ্রেড বা ডুপ্লিকেট পোলিং যেন না হয়
+        # infinity_polling এর পরিবর্তে এই মেথডটি বেশি কার্যকর
         bot.infinity_polling(none_stop=True, timeout=60, long_polling_timeout=60)
     except Exception as e:
         print(f"Polling error: {e}")
-        sys.exit(1) # এরর হলে প্রসেসটি পুরোপুরি বন্ধ করে দেবে যাতে নতুন করে রিস্টার্ট নিতে পারে
+        # এরর হলে প্রসেসটি বন্ধ করুন যাতে রেন্ডার এটিকে আবার নতুন করে ফ্রেশভাবে চালু করতে পারে
+        sys.exit(1)
