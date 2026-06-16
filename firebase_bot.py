@@ -157,6 +157,9 @@ def handle_menu(message):
 
 import sys
 
+# ওয়েব সার্ভার চালু করা
+threading.Thread(target=run_flask, daemon=True).start()
+
 # কোডের এই অংশটি দিয়ে আপনার বর্তমান পোলিং অংশটি রিপ্লেস করা হয়েছে:
 try:
     print("Starting bot polling...")
