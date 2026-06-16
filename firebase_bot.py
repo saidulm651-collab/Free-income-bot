@@ -164,12 +164,11 @@ if __name__ == '__main__':
     
     # কনফ্লিক্ট এড়াতে ওয়েব-হুক রিমুভ করা
     bot.remove_webhook()
-    time.sleep(2) # সময় একটু বাড়িয়ে দিলাম যাতে আগের সেশন পুরোপুরি বন্ধ হয়
     
+    # পোলিং মোডে টাইমআউট বাড়িয়ে দেওয়া যাতে সংযোগ বিচ্ছিন্ন না হয়
     try:
-        # infinity_polling এর পরিবর্তে এই মেথডটি বেশি কার্যকর
-        bot.infinity_polling(none_stop=True, timeout=60, long_polling_timeout=60)
+        bot.infinity_polling(none_stop=True, interval=0, timeout=120, long_polling_timeout=120)
     except Exception as e:
         print(f"Polling error: {e}")
-        # এরর হলে প্রসেসটি বন্ধ করুন যাতে রেন্ডার এটিকে আবার নতুন করে ফ্রেশভাবে চালু করতে পারে
+        # রেন্ডারকে নতুন করে রিস্টার্ট নিতে বাধ্য করা
         sys.exit(1)
