@@ -156,6 +156,9 @@ def handle_menu(message):
             bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
 
 if __name__ == '__main__':
-    threading.Thread(target=run_flask).start()
+    # ফ্লাস্ক আগে রান হবে
+    threading.Thread(target=run_flask, daemon=True).start()
+    
     print("Bot is running...")
-    bot.infinity_polling(none_stop=True, timeout=60, long_polling_timeout=60)
+    # পোলিং এর সময় টেলিগ্রামকে নির্দিষ্ট মেসেজ টাইপ বলে দিন
+    bot.infinity_polling(none_stop=True, allowed_updates=['message', 'callback_query'])
