@@ -21,7 +21,8 @@ REFER_BONUS = 3.0
 MIN_WITHDRAW = 100.0   
 
 REQUIRED_CHANNELS = [
-    '@gamingsaidul', '@gamingsaidulchat', '@gamingsaidulapp', '@gamingsaidulgs', '@gamingsaidulnews'
+    '@gamingsaidul', '@gamingsaidulchat', '@gamingsaidulapp', 
+    '@gamingsaidulgs', '@gamingsaidulnews', '@gamingsaidulextra'
 ]
 
 WEBSITE_LINK = "https://gamingsaidulyt.blogspot.com" 
@@ -77,7 +78,8 @@ def check_all_subscriptions(user_id):
     return True
 
 def get_unjoined_channel(user_id):
-    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰"]
+    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰", "Gaming Saidul Extra 🆕"]
+
     for i, channel in enumerate(REQUIRED_CHANNELS):
         try:
             member = bot.get_chat_member(channel, user_id)
