@@ -89,7 +89,7 @@ def get_unjoined_channel(user_id):
 
 def send_force_join_msg(user_id, text):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰"]
+    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰", "Gaming Saidul Extra 🆕"]
     for i, channel in enumerate(REQUIRED_CHANNELS):
         markup.add(types.InlineKeyboardButton(channel_names[i], url=f"https://t.me/{channel.replace('@', '')}"))
     markup.add(types.InlineKeyboardButton("🌐 Visit Website (৩ মিনিট বাধ্যতামূলক)", url=WEBSITE_LINK))
