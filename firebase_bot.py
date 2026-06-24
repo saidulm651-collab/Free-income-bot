@@ -12,7 +12,6 @@ app = Flask(__name__)
 
 # --- সেটিংস ---
 API_TOKEN = os.environ.get('API_TOKEN')
-# আপনার রেন্ডার অ্যাপের লিংকটি এখানে দিন
 WEBHOOK_URL = "https://free-income-bot-sxd6.onrender.com" 
 
 ADMIN_ID = 8426401567
@@ -21,8 +20,7 @@ REFER_BONUS = 3.0
 MIN_WITHDRAW = 100.0   
 
 REQUIRED_CHANNELS = [
-    '@gamingsaidul', '@gamingsaidulchat', '@gamingsaidulapp', 
-    '@gamingsaidulgs', '@gamingsaidulnews', '@gamingsaidulextra'
+    '@gamingsaidul', '@gamingsaidulchat', '@gamingsaidulapp', '@gamingsaidulgs', '@gamingsaidulnews'
 ]
 
 WEBSITE_LINK = "https://gamingsaidulyt.blogspot.com" 
@@ -78,8 +76,7 @@ def check_all_subscriptions(user_id):
     return True
 
 def get_unjoined_channel(user_id):
-    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰", "Gaming Saidul Extra 🆕"]
-
+    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰"]
     for i, channel in enumerate(REQUIRED_CHANNELS):
         try:
             member = bot.get_chat_member(channel, user_id)
@@ -89,7 +86,7 @@ def get_unjoined_channel(user_id):
 
 def send_force_join_msg(user_id, text):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰", "Gaming Saidul Extra 🆕"]
+    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰"]
     for i, channel in enumerate(REQUIRED_CHANNELS):
         markup.add(types.InlineKeyboardButton(channel_names[i], url=f"https://t.me/{channel.replace('@', '')}"))
     markup.add(types.InlineKeyboardButton("🌐 Visit Website (৩ মিনিট বাধ্যতামূলক)", url=WEBSITE_LINK))
@@ -98,7 +95,21 @@ def send_force_join_msg(user_id, text):
 @bot.message_handler(commands=['start'])
 def start_command(message):
     user_id = message.from_user.id
-    get_user_data(user_id)
+    args = message.text.split()
+    user_data = get_user_data(user_id)
+    
+    # রেফারেল চেক
+    if len(args) > 1:
+        referrer_id = args[1]
+        if referrer_id != str(user_id) and user_data.get('referred_by') is None:
+            referrer_data = get_user_data(referrer_id)
+            referrer_data['balance'] = referrer_data.get('balance', 0.0) + REFER_BONUS
+            referrer_data['referrals'] = referrer_data.get('referrals', 0) + 1
+            update_user_data(referrer_id, referrer_data)
+            user_data['referred_by'] = referrer_id
+            update_user_data(user_id, user_data)
+            bot.send_message(referrer_id, f"🎉 নতুন রেফারেল! আপনি {REFER_BONUS} ⭐ বোনাস পেয়েছেন।")
+            
     bot.send_message(user_id, "⚙️ মেনু লোড হচ্ছে...", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
 
 @bot.message_handler(func=lambda message: True)
@@ -106,25 +117,22 @@ def handle_menu(message):
     user_id = message.from_user.id
     text = message.text
     
-    if text.startswith("/check_bal") or text.startswith("/add_bal") or text.startswith("/sub_bal"):
+    if text.startswith(("/check_bal", "/add_bal", "/sub_bal")):
         if user_id == ADMIN_ID:
             parts = text.split()
             if len(parts) < 2: return
             target_id = parts[1]
             target_data = get_user_data(target_id)
-            
             if text.startswith("/check_bal"):
                 bot.send_message(user_id, f"👤 User {target_id} এর বর্তমান ব্যালেন্স: {target_data.get('balance', 0.0)} ⭐")
             elif text.startswith("/add_bal") and len(parts) == 3:
-                amount = float(parts[2])
-                target_data['balance'] = target_data.get('balance', 0.0) + amount
+                target_data['balance'] = target_data.get('balance', 0.0) + float(parts[2])
                 update_user_data(target_id, target_data)
-                bot.send_message(user_id, f"✅ যোগ করা হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
+                bot.send_message(user_id, f"✅ যোগ করা হয়েছে।")
             elif text.startswith("/sub_bal") and len(parts) == 3:
-                amount = float(parts[2])
-                target_data['balance'] = target_data.get('balance', 0.0) - amount
+                target_data['balance'] = target_data.get('balance', 0.0) - float(parts[2])
                 update_user_data(target_id, target_data)
-                bot.send_message(user_id, f"✅ কমানো হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
+                bot.send_message(user_id, f"✅ কমানো হয়েছে।")
         return
 
     user_data = get_user_data(user_id)
@@ -132,7 +140,7 @@ def handle_menu(message):
     task_done = user_data.get('task_completed', False)
 
     if not is_subscribed and text != "🔄 Check Join":
-        send_force_join_msg(user_id, f"❌ আগে সবগুলো চ্যানেলে জয়েন করুন। এখনো বাকি: **{get_unjoined_channel(user_id)}**")
+        send_force_join_msg(user_id, f"❌ আগে চ্যানেলে জয়েন করুন: **{get_unjoined_channel(user_id)}**")
         return
 
     if text == "🔄 Check Join":
@@ -152,15 +160,21 @@ def handle_menu(message):
                     user_data['task_completed'] = True
                     update_user_data(user_id, user_data)
                     bot.send_message(user_id, "✅ টাস্ক সম্পন্ন হয়েছে!")
+                    
+                    # রেফারার বোনাস ও নোটিফিকেশন
+                    referrer_id = user_data.get('referred_by')
+                    if referrer_id:
+                        referrer_data = get_user_data(referrer_id)
+                        referrer_data['balance'] = referrer_data.get('balance', 0.0) + REFER_BONUS
+                        update_user_data(referrer_id, referrer_data)
+                        bot.send_message(referrer_id, f"🎉 আপনার রেফার করা ইউজার টাস্ক শেষ করেছে। আপনি {REFER_BONUS} ⭐ বোনাস পেয়েছেন।")
         else:
             bot.send_message(user_id, "✅ আপনি অলরেডি সব কাজ শেষ করেছেন।")
 
     elif text == "👤 Profile & Balance":
         bot.send_message(user_id, f"💰 ব্যালেন্স: {user_data.get('balance', 0.0)} ⭐")
-
     elif text == "🔗 Referral Link":
         bot.send_message(user_id, f"🔗 লিঙ্ক: https://t.me/{(bot.get_me()).username}?start={user_id}")
-
     elif text == "💰 Withdraw":
         bal = user_data.get('balance', 0.0)
         if bal < MIN_WITHDRAW:
@@ -168,7 +182,6 @@ def handle_menu(message):
         else:
             bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
 
-# --- ওয়েব-হুক সেটআপ ---
 if __name__ == '__main__':
     bot.remove_webhook()
     bot.set_webhook(url=f"{WEBHOOK_URL}/{API_TOKEN}")
