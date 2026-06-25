@@ -23,6 +23,11 @@ REQUIRED_CHANNELS = [
     '@gamingsaidul', '@gamingsaidulchat', '@gamingsaidulapp', '@gamingsaidulgs', '@gamingsaidulnews', '@gamingsaidulextra'
 ]
 
+CHANNEL_NAMES = [
+    "Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", 
+    "Gaming Saidul GS 🎮", "Gaming Saidul News 📰", "Gaming Saidul Extra"
+]
+
 WEBSITE_LINK = "https://gamingsaidulyt.blogspot.com" 
 TASK_DURATION = 180  
 
@@ -76,19 +81,17 @@ def check_all_subscriptions(user_id):
     return True
 
 def get_unjoined_channel(user_id):
-    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰", "Gaming Saidul Extra"]
     for i, channel in enumerate(REQUIRED_CHANNELS):
         try:
             member = bot.get_chat_member(channel, user_id)
-            if member.status not in ['member', 'administrator', 'creator']: return channel_names[i]
-        except: return channel_names[i]
+            if member.status not in ['member', 'administrator', 'creator']: return CHANNEL_NAMES[i]
+        except: return CHANNEL_NAMES[i]
     return None
 
 def send_force_join_msg(user_id, text):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    channel_names = ["Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", "Gaming Saidul GS 🎮", "Gaming Saidul News 📰", "Gaming Saidul Extra"]
     for i, channel in enumerate(REQUIRED_CHANNELS):
-        markup.add(types.InlineKeyboardButton(channel_names[i], url=f"https://t.me/{channel.replace('@', '')}"))
+        markup.add(types.InlineKeyboardButton(CHANNEL_NAMES[i], url=f"https://t.me/{channel.replace('@', '')}"))
     markup.add(types.InlineKeyboardButton("🌐 Visit Website (৩ মিনিট বাধ্যতামূলক)", url=WEBSITE_LINK))
     bot.send_message(user_id, text, reply_markup=markup, parse_mode="Markdown")
 
@@ -98,7 +101,6 @@ def start_command(message):
     args = message.text.split()
     user_data = get_user_data(user_id)
     
-    # রেফারেল রেজিস্ট্রেশন লজিক
     if len(args) > 1:
         referrer_id = args[1]
         if referrer_id != str(user_id) and user_data.get('referred_by') is None:
@@ -119,31 +121,21 @@ def handle_menu(message):
             target_id = parts[1]
             target_data = get_user_data(target_id)
             if text.startswith("/check_bal"):
-                bot.send_message(user_id, f"👤 User {target_id} এর বর্তমান ব্যালেন্স: {target_data.get('balance', 0.0)} ⭐")
+                bot.send_message(user_id, f"👤 User {target_id} এর ব্যালেন্স: {target_data.get('balance', 0.0)} ⭐")
             elif text.startswith("/add_bal") and len(parts) == 3:
-                amount = float(parts[2])
-                target_data['balance'] = target_data.get('balance', 0.0) + amount
+                target_data['balance'] = target_data.get('balance', 0.0) + float(parts[2])
                 update_user_data(target_id, target_data)
-                bot.send_message(user_id, f"✅ যোগ করা হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
-            elif text.startswith("/sub_bal") and len(parts) == 3:
-                amount = float(parts[2])
-                target_data['balance'] = target_data.get('balance', 0.0) - amount
-                update_user_data(target_id, target_data)
-                bot.send_message(user_id, f"✅ কমানো হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
+                bot.send_message(user_id, f"✅ যোগ হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
         return
 
     user_data = get_user_data(user_id)
-    is_subscribed = check_all_subscriptions(user_id)
-    task_done = user_data.get('task_completed', False)
-
-    if not is_subscribed and text != "🔄 Check Join":
-        send_force_join_msg(user_id, f"❌ আগে সবগুলো চ্যানেলে জয়েন করুন। এখনো বাকি: **{get_unjoined_channel(user_id)}**")
-        return
-
+    
     if text == "🔄 Check Join":
-        if not is_subscribed:
-            send_force_join_msg(user_id, f"❌ এখনো জয়েন করেননি: **{get_unjoined_channel(user_id)}**")
-        elif not task_done:
+        if not check_all_subscriptions(user_id):
+            send_force_join_msg(user_id, f"❌ আগে সবগুলো চ্যানেলে জয়েন করুন। এখনো বাকি: **{get_unjoined_channel(user_id)}**")
+        elif user_data.get('task_completed', False):
+            bot.send_message(user_id, "✅ আপনি অলরেডি সব কাজ শেষ করেছেন।")
+        else:
             start_time = user_data.get('task_started_at')
             if start_time is None:
                 user_data['task_started_at'] = time.time()
@@ -155,30 +147,26 @@ def handle_menu(message):
                     bot.send_message(user_id, f"⏳ আরও {int((TASK_DURATION - elapsed)//60)} মিনিট অপেক্ষা করুন।")
                 else:
                     user_data['task_completed'] = True
+                    user_data['balance'] = user_data.get('balance', 0.0) + 5.0
                     update_user_data(user_id, user_data)
-                    bot.send_message(user_id, "✅ টাস্ক সম্পন্ন হয়েছে!")
+                    bot.send_message(user_id, "✅ টাস্ক সম্পন্ন হয়েছে! ৫ ⭐ বোনাস পেয়েছেন।")
                     
-                    # রেফারেল বোনাস লজিক
                     referrer_id = user_data.get('referred_by')
                     if referrer_id:
                         referrer_data = get_user_data(referrer_id)
                         referrer_data['balance'] = referrer_data.get('balance', 0.0) + REFER_BONUS
                         referrer_data['referrals'] = referrer_data.get('referrals', 0) + 1
                         update_user_data(referrer_id, referrer_data)
-                        try:
-                            bot.send_message(referrer_id, f"🎉 নতুন রেফারেল টাস্ক শেষ করেছে! আপনি {REFER_BONUS} ⭐ বোনাস পেয়েছেন।")
+                        try: bot.send_message(referrer_id, f"🎉 নতুন রেফারেল টাস্ক শেষ করেছে! আপনি {REFER_BONUS} ⭐ বোনাস পেয়েছেন।")
                         except: pass
-        else:
-            bot.send_message(user_id, "✅ আপনি অলরেডি সব কাজ শেষ করেছেন।")
 
     elif text == "👤 Profile & Balance":
         bot.send_message(user_id, f"💰 ব্যালেন্স: {user_data.get('balance', 0.0)} ⭐")
     elif text == "🔗 Referral Link":
         bot.send_message(user_id, f"🔗 লিঙ্ক: https://t.me/{(bot.get_me()).username}?start={user_id}")
     elif text == "💰 Withdraw":
-        bal = user_data.get('balance', 0.0)
-        if bal < MIN_WITHDRAW:
-            bot.send_message(user_id, f"❌ পর্যাপ্ত ব্যালেন্স নেই। প্রয়োজন {MIN_WITHDRAW} ⭐।")
+        if user_data.get('balance', 0.0) < MIN_WITHDRAW:
+            bot.send_message(user_id, f"❌ প্রয়োজন {MIN_WITHDRAW} ⭐।")
         else:
             bot.send_message(user_id, f"✅ এডমিনকে মেসেজ দিন: @{ADMIN_USERNAME}")
 
