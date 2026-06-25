@@ -110,13 +110,18 @@ def start_command(message):
             update_user_data(user_id, user_data)
             bot.send_message(referrer_id, f"🎉 নতুন রেফারেল! আপনি {REFER_BONUS} ⭐ বোনাস পেয়েছেন।")
             
-    bot.send_message(user_id, "⚙️ মেনু লোড হচ্ছে...", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
+    # সাবস্ক্রিপশন চেক করার পর মেনু দেখানো
+    if check_all_subscriptions(user_id):
+        bot.send_message(user_id, "⚙️ মেনু লোড হচ্ছে...", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
+    else:
+        send_force_join_msg(user_id, f"❌ আগে সবগুলো চ্যানেলে জয়েন করুন। এখনো বাকি: **{get_unjoined_channel(user_id)}**")
 
 @bot.message_handler(func=lambda message: True)
 def handle_menu(message):
     user_id = message.from_user.id
     text = message.text
     
+    # এডমিন কমান্ড
     if text.startswith(("/check_bal", "/add_bal", "/sub_bal")):
         if user_id == ADMIN_ID:
             parts = text.split()
@@ -135,18 +140,16 @@ def handle_menu(message):
                 bot.send_message(user_id, f"✅ কমানো হয়েছে।")
         return
 
-    user_data = get_user_data(user_id)
-    is_subscribed = check_all_subscriptions(user_id)
-    task_done = user_data.get('task_completed', False)
-
-    if not is_subscribed and text != "🔄 Check Join":
+    # জয়েন না থাকলে মেনু কাজ করবে না
+    if not check_all_subscriptions(user_id):
         send_force_join_msg(user_id, f"❌ আগে চ্যানেলে জয়েন করুন: **{get_unjoined_channel(user_id)}**")
         return
 
+    user_data = get_user_data(user_id)
+    task_done = user_data.get('task_completed', False)
+
     if text == "🔄 Check Join":
-        if not is_subscribed:
-            send_force_join_msg(user_id, f"❌ এখনো জয়েন করেননি: **{get_unjoined_channel(user_id)}**")
-        elif not task_done:
+        if not task_done:
             start_time = user_data.get('task_started_at')
             if start_time is None:
                 user_data['task_started_at'] = time.time()
@@ -161,7 +164,6 @@ def handle_menu(message):
                     update_user_data(user_id, user_data)
                     bot.send_message(user_id, "✅ টাস্ক সম্পন্ন হয়েছে!")
                     
-                    # রেফারার বোনাস ও নোটিফিকেশন
                     referrer_id = user_data.get('referred_by')
                     if referrer_id:
                         referrer_data = get_user_data(referrer_id)
