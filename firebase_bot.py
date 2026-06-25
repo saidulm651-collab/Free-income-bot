@@ -107,9 +107,9 @@ def start_command(message):
             user_data['referred_by'] = referrer_id
             update_user_data(user_id, user_data)
             
-    bot.send_message(user_id, "স্বাগতম! 🚀 
-টাস্ক কমপ্লিট করে 5 ⭐ পান এবং রেফার করে 3 ⭐ আয় করুন। 
-শুরু করতে নিচের বাটনগুলো ব্যবহার করুন👇👇", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
+    bot.send_message(user_id, """স্বাগতম! 🚀
+টাস্ক কমপ্লিট করে 5 ⭐ পান এবং রেফার করে 3 ⭐ আয় করুন।
+শুরু করতে নিচের বাটনগুলো ব্যবহার করুন👇👇""", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
 
 @bot.message_handler(func=lambda message: True)
 def handle_menu(message):
