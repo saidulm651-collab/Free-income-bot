@@ -98,7 +98,6 @@ def start_command(message):
     args = message.text.split()
     user_data = get_user_data(user_id)
     
-    # রেফারেল চেক
     if len(args) > 1:
         referrer_id = args[1]
         if referrer_id != str(user_id) and user_data.get('referred_by') is None:
@@ -110,7 +109,6 @@ def start_command(message):
             update_user_data(user_id, user_data)
             bot.send_message(referrer_id, f"🎉 নতুন রেফারেল! আপনি {REFER_BONUS} ⭐ বোনাস পেয়েছেন।")
             
-    # সাবস্ক্রিপশন চেক করার পর মেনু দেখানো
     if check_all_subscriptions(user_id):
         bot.send_message(user_id, "⚙️ মেনু লোড হচ্ছে...", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
     else:
@@ -121,7 +119,6 @@ def handle_menu(message):
     user_id = message.from_user.id
     text = message.text
     
-    # এডমিন কমান্ড
     if text.startswith(("/check_bal", "/add_bal", "/sub_bal")):
         if user_id == ADMIN_ID:
             parts = text.split()
@@ -140,9 +137,9 @@ def handle_menu(message):
                 bot.send_message(user_id, f"✅ কমানো হয়েছে।")
         return
 
-    # জয়েন না থাকলে মেনু কাজ করবে না
+    # প্রতিটি মেসেজের জন্য বাধ্যতামূলক সাবস্ক্রিপশন চেক
     if not check_all_subscriptions(user_id):
-        send_force_join_msg(user_id, f"❌ আগে চ্যানেলে জয়েন করুন: **{get_unjoined_channel(user_id)}**")
+        send_force_join_msg(user_id, f"❌ আপনি সব চ্যানেলে জয়েন করেননি: **{get_unjoined_channel(user_id)}**")
         return
 
     user_data = get_user_data(user_id)
@@ -163,7 +160,6 @@ def handle_menu(message):
                     user_data['task_completed'] = True
                     update_user_data(user_id, user_data)
                     bot.send_message(user_id, "✅ টাস্ক সম্পন্ন হয়েছে!")
-                    
                     referrer_id = user_data.get('referred_by')
                     if referrer_id:
                         referrer_data = get_user_data(referrer_id)
