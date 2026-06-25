@@ -13,12 +13,10 @@ ADMIN_USERNAME = "gamingsaidulyt"
 REFER_BONUS = 3.0        
 MIN_WITHDRAW = 100.0   
 
-# নতুন চ্যানেলসহ তালিকা আপডেট করা হলো
 REQUIRED_CHANNELS = [
     '@gamingsaidul', '@gamingsaidulchat', '@gamingsaidulapp', '@gamingsaidulgs', '@gamingsaidulnews', '@gamingsaidulextra'
 ]
 
-# চ্যানেলের নামগুলো আপডেট করা হলো
 CHANNEL_NAMES = [
     "Gaming Saidul 📢", "Gaming Saidul Chat 💬", "Gaming Saidul App 📱", 
     "Gaming Saidul GS 🎮", "Gaming Saidul News 📰", "Gaming Saidul Extra ⚡"
@@ -38,11 +36,11 @@ def get_user_data(user_id):
         url = f"{FIREBASE_URL}users/{user_id}.json?auth={FIREBASE_SECRET}"
         data = requests.get(url).json()
         if data is None:
-            default = {'balance': 0.0, 'referred_by': None, 'task_completed': False, 'task_started_at': None}
+            default = {'balance': 0.0, 'referred_by': None, 'referrals': 0, 'task_completed': False, 'task_started_at': None}
             requests.put(url, json=default)
             return default
         return data
-    except: return {'balance': 0.0, 'referred_by': None, 'task_completed': False, 'task_started_at': None}
+    except: return {'balance': 0.0, 'referred_by': None, 'referrals': 0, 'task_completed': False, 'task_started_at': None}
 
 def update_user_data(user_id, data):
     requests.put(f"{FIREBASE_URL}users/{user_id}.json?auth={FIREBASE_SECRET}", json=data)
@@ -63,8 +61,18 @@ def send_force_join_msg(user_id):
 @bot.message_handler(commands=['start'])
 def start_command(message):
     user_id = message.from_user.id
-    # মেনু দেখানো হচ্ছে
-    bot.send_message(user_id, "⚙️ স্বাগতম! কাজ শুরু করতে মেনু ব্যবহার করুন।", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
+    args = message.text.split()
+    user_data = get_user_data(user_id)
+    
+    # রেফারেল চেক
+    if len(args) > 1:
+        referrer_id = args[1]
+        if referrer_id != str(user_id) and user_data.get('referred_by') is None:
+            user_data['referred_by'] = referrer_id
+            update_user_data(user_id, user_data)
+            bot.send_message(user_id, "🎉 আপনি রেফারেল লিঙ্কের মাধ্যমে এসেছেন।")
+            
+    bot.send_message(user_id, "⚙️ স্বাগতম! মেনু ব্যবহার করুন।", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("👤 Profile & Balance", "🔗 Referral Link", "💰 Withdraw", "🔄 Check Join"))
 
 @bot.message_handler(func=lambda message: True)
 def handle_menu(message):
@@ -84,17 +92,36 @@ def handle_menu(message):
                 bot.send_message(user_id, "✅ যোগ হয়েছে।")
         return
 
-    # কঠোর সাবস্ক্রিপশন চেক - নতুন চ্যানেলসহ
+    # সাবস্ক্রিপশন চেক
     if not check_all_subscriptions(user_id):
         send_force_join_msg(user_id)
         return
 
-    # জয়েন করা থাকলে নিচের মেনু অপশন কাজ করবে
     user_data = get_user_data(user_id)
     
     if text == "🔄 Check Join":
-        # আপনার টাস্ক লজিক এখানে থাকবে
-        bot.send_message(user_id, "✅ আপনি সব চ্যানেলে জয়েন আছেন, টাস্ক শুরু করুন।")
+        if user_data.get('task_completed'):
+            bot.send_message(user_id, "✅ আপনি অলরেডি টাস্ক শেষ করেছেন।")
+        else:
+            start_time = user_data.get('task_started_at')
+            if start_time is None:
+                user_data['task_started_at'] = time.time()
+                update_user_data(user_id, user_data)
+                bot.send_message(user_id, f"⚠️ ওয়েবসাইট ভিজিট করুন: {WEBSITE_LINK} (৩ মিনিট অপেক্ষা করুন)")
+            elif time.time() - start_time < TASK_DURATION:
+                bot.send_message(user_id, "⏳ কাজ চলছে, কিছুক্ষণ অপেক্ষা করুন।")
+            else:
+                user_data['task_completed'] = True
+                update_user_data(user_id, user_data)
+                bot.send_message(user_id, "✅ টাস্ক সম্পন্ন হয়েছে!")
+                # রেফারার বোনাস ও নোটিফিকেশন
+                if ref := user_data.get('referred_by'):
+                    r_data = get_user_data(ref)
+                    r_data['balance'] = r_data.get('balance', 0.0) + REFER_BONUS
+                    r_data['referrals'] = r_data.get('referrals', 0) + 1
+                    update_user_data(ref, r_data)
+                    bot.send_message(ref, f"🎉 নতুন রেফারেল টাস্ক শেষ করেছে! আপনি {REFER_BONUS} ⭐ বোনাস পেয়েছেন।")
+
     elif text == "👤 Profile & Balance":
         bot.send_message(user_id, f"💰 ব্যালেন্স: {user_data.get('balance', 0.0)} ⭐")
     elif text == "🔗 Referral Link":
