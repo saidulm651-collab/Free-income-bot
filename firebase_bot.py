@@ -114,6 +114,7 @@ def handle_menu(message):
     user_id = message.from_user.id
     text = message.text
     
+    # এডমিন কমান্ড
     if text.startswith(("/check_bal", "/add_bal", "/sub_bal")):
         if user_id == ADMIN_ID:
             parts = text.split()
@@ -128,12 +129,15 @@ def handle_menu(message):
                 bot.send_message(user_id, f"✅ যোগ হয়েছে। নতুন ব্যালেন্স: {target_data['balance']} ⭐")
         return
 
+    # সাবস্ক্রিপশন চেকিং (যেকোনো বাটনের জন্য)
+    if not check_all_subscriptions(user_id):
+        send_force_join_msg(user_id, f"❌ আগে সবগুলো চ্যানেলে জয়েন করুন। এখনো বাকি: **{get_unjoined_channel(user_id)}**")
+        return
+
     user_data = get_user_data(user_id)
     
     if text == "🔄 Check Join":
-        if not check_all_subscriptions(user_id):
-            send_force_join_msg(user_id, f"❌ আগে সবগুলো চ্যানেলে জয়েন করুন। এখনো বাকি: **{get_unjoined_channel(user_id)}**")
-        elif user_data.get('task_completed', False):
+        if user_data.get('task_completed', False):
             bot.send_message(user_id, "✅ আপনি অলরেডি সব কাজ শেষ করেছেন।")
         else:
             start_time = user_data.get('task_started_at')
